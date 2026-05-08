@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>强化学习知识树 - Vue + ECharts</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        #app {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .btn.active {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        #tree-chart {
+            width: 100%;
+            height: 1000px;
+        }
+        
+        .info-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-height: 1000px;
+            overflow-y: auto;
+        }
+        
+        .info-panel h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        
+        .info-panel h3 {
+            color: #764ba2;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        
+        .info-panel p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .tech-detail {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .tech-detail h4 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .tech-detail .english {
+            color: #888;
+            font-style: italic;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+        
+        .tech-detail .description {
+            color: #555;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-right: 8px;
+            margin-top: 8px;
+        }
+        
+        .badge.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge.in-progress {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .badge.future {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .badge.basic {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge.intermediate {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge.advanced {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .tag {
+            display: inline-block;
+            background: #e7f3ff;
+            color: #0066cc;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            margin-right: 5px;
+            margin-top: 5px;
+        }
+        
+        .stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stats h3 {
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            font-weight: bold;
+            color: #667eea;
+            transition: width 1s ease;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+            
+            #tree-chart {
+                height: 800px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1>🌳 强化学习知识树</h1>
+            <p>基于 Vue 3 + ECharts 的交互式可视化</p>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" :class="{active: layout === 'tree'}" @click="changeLayout('tree')">树状布局</button>
+            <button class="btn" :class="{active: layout === 'radial'}" @click="changeLayout('radial')">放射布局</button>
+            <button class="btn" @click="expandAll">全部展开</button>
+            <button class="btn" @click="collapseAll">全部收起</button>
+            <button class="btn" @click="resetView">重置视图</button>
+        </div>
+        
+        <div class="main-container">
+            <div class="chart-container">
+                <div id="tree-chart"></div>
+            </div>
+            
+            <div class="info-panel">
+                <div class="stats">
+                    <h3>学习进度</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" :style="{width: progress + '%'}">{{ progress }}%</div>
+                    </div>
+                    <p>已完成 {{ completedCount }} / {{ totalCount }} 个阶段</p>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #52c41a;"></div>
+                            <span>已完成</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #ff4d4f;"></div>
+                            <span>进行中</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #d9d9d9;"></div>
+                            <span>待学习</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div v-if="selectedNode">
+                    <h2>{{ selectedNode.name }}</h2>
+                    <div>
+                        <span class="badge" :class="selectedNode.status">{{ getStatusText(selectedNode.status) }}</span>
+                    </div>
+                    
+                    <h3>概述</h3>
+                    <p>{{ selectedNode.description }}</p>
+                    
+                    <div v-if="selectedNode.children && selectedNode.children.length > 0">
+                        <h3>包含技术 ({{ selectedNode.children.length }})</h3>
+                        <div v-for="tech in selectedNode.children" :key="tech.name" class="tech-detail">
+                            <h4>{{ tech.name }}</h4>
+                            <div class="english" v-if="tech.english">{{ tech.english }}</div>
+                            <div class="description">{{ tech.description }}</div>
+                            <div v-if="tech.difficulty">
+                                <span class="badge" :class="tech.difficulty">{{ getDifficultyText(tech.difficulty) }}</span>
+                            </div>
+                            <div v-if="tech.tags">
+                                <span class="tag" v-for="tag in tech.tags" :key="tag">{{ tag }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div v-else>
+                    <h2>欢迎</h2>
+                    <p>点击树状图中的节点查看详细信息</p>
+                    <h3>使用说明</h3>
+                    <ul style="color: #666; line-height: 2; margin-left: 20px;">
+                        <li>点击节点查看详细信息</li>
+                        <li>双击节点展开/收起子节点</li>
+                        <li>拖拽可以移动视图</li>
+                        <li>滚轮可以缩放</li>
+                        <li>切换布局查看不同视角</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const { createApp } = Vue;
+        
+        createApp({
+            data() {
+                return {
+                    chart: null,
+                    layout: 'tree',
+                    selectedNode: null,
+                    progress: 0,
+                    completedCount: 2,
+                    totalCount: 9,
+                    treeData: {
+                        name: '强化学习',
+                        status: 'in-progress',
+                        description: '从入门到实战的完整学习路径',
+                        children: [
+                            {
+                                name: '1. Bilibili',
+                                status: 'completed',
+                                description: '强化学习入门视频课程，建立基础认知',
+                                children: []
+                            },
+                            {
+                                name: '2. AlphaStar PDF',
+                                status: 'in-progress',
+                                description: 'DeepMind AlphaStar 论文深度研读',
+                                children: [
+                                    {
+                                        name: '优势演员-评论家 (A2C)',
+                                        english: 'Advantage Actor-Critic',
+                                        description: '策略梯度算法核心，结合Actor和Critic网络，通过优势函数减少方差',
+                                        difficulty: 'advanced',
+                                        tags: ['策略梯度', '价值函数']
+                                    },
+                                    {
+                                        name: '离策略学习',
+                                        english: 'Off-policy Learning',
+                                        description: '使用先前策略生成的经验来更新当前策略，提高样本效率',
+                                        difficulty: 'intermediate',
+                                        tags: ['经验重放', '样本效率']
+                                    },
+                                    {
+                                        name: '时序差异学习 TD(λ)',
+                                        english: 'Temporal Difference Learning',
+                                        description: '结合蒙特卡洛和动态规划的优点，通过自举更新价值估计',
+                                        difficulty: 'basic',
+                                        tags: ['价值估计', '自举']
+                                    },
+                                    {
+                                        name: 'V-trace 截断重要性采样',
+                                        english: 'V-trace Truncated Importance Sampling',
+                                        description: 'DeepMind 提出的离策略修正技术，通过截断重要性权重来稳定训练',
+                                        difficulty: 'advanced',
+                                        tags: ['重要性采样', '离策略修正']
+                                    },
+                                    {
+                                        name: 'UPGO 自我模仿算法',
+                                        english: 'Upgoing Policy Gradient Optimization',
+                                        description: 'AlphaStar 创新算法，引导策略朝向奖励优于平均水平的轨迹',
+                                        difficulty: 'advanced',
+                                        tags: ['策略优化', '轨迹选择']
+                                    },
+                                    {
+                                        name: '联盟训练',
+                                        english: 'League Training',
+                                        description: 'AlphaStar 核心创新，通过维护多样化智能体联盟进行训练',
+                                        difficulty: 'advanced',
+                                        tags: ['多智能体', '策略多样性']
+                                    },
+                                    {
+                                        name: '自玩算法',
+                                        english: 'Self-play',
+                                        description: '智能体与自身的历史版本对战，AlphaGo 和 AlphaZero 的核心方法',
+                                        difficulty: 'intermediate',
+                                        tags: ['自我对弈', '策略迭代']
+                                    },
+                                    {
+                                        name: '虚构自玩 FSP',
+                                        english: 'Fictitious Self-Play',
+                                        description: '计算针对所有先前策略均匀混合物的最佳响应，收敛于纳什均衡',
+                                        difficulty: 'advanced',
+                                        tags: ['博弈论', '纳什均衡']
+                                    },
+                                    {
+                                        name: '优先级虚拟自玩 PFSP',
+                                        english: 'Prioritized Fictitious Self-Play',
+                                        description: 'AlphaStar 改进的 FSP，根据对手胜率动态调整对战概率',
+                                        difficulty: 'advanced',
+                                        tags: ['优先级采样', '对手选择']
+                                    },
+                                    {
+                                        name: '纳什均衡',
+                                        english: 'Nash Equilibrium',
+                                        description: '博弈论核心概念，所有参与者都无法通过单方面改变策略获得更好收益',
+                                        difficulty: 'intermediate',
+                                        tags: ['博弈论', '均衡解']
+                                    },
+                                    {
+                                        name: '监督学习预训练',
+                                        english: 'Supervised Learning Pre-training',
+                                        description: '使用人类玩家数据进行初始化，为强化学习提供良好起点',
+                                        difficulty: 'basic',
+                                        tags: ['模仿学习', '预训练']
+                                    },
+                                    {
+                                        name: '主智能体',
+                                        english: 'Main Agent',
+                                        description: '使用 PFSP 机制，优先与最具挑战性的对手对战',
+                                        difficulty: 'intermediate',
+                                        tags: ['核心智能体', 'PFSP']
+                                    }
+                                ]
+                            },
+                            {
+                                name: '3. Lillog 博客',
+                                status: 'future',
+                                description: '基本科普，了解核心概念',
+                                children: [
+                                    {
+                                        name: '强化学习基础概念',
+                                        description: 'MDP、奖励、策略等核心概念科普',
+                                        difficulty: 'basic'
+                                    },
+                                    {
+                                        name: '深度学习基础',
+                                        description: '神经网络、反向传播、优化器',
+                                        difficulty: 'basic'
+                                    }
+                                ]
+                            },
+                            {
+                                name: '4. Sutton & Barto 教材',
+                                status: 'future',
+                                description: '夯实理论逻辑基础',
+                                children: [
+                                    {
+                                        name: '马尔可夫决策过程',
+                                        description: 'MDP理论基础',
+                                        difficulty: 'intermediate'
+                                    },
+                                    {
+                                        name: '动态规划',
+                                        description: '值迭代、策略迭代',
+                                        difficulty: 'intermediate'
+                                    },
+                                    {
+                                        name: '函数逼近',
+                                        description: '深度强化学习理论',
+                                        difficulty: 'advanced'
+                                    }
+                                ]
+                            },
+                            {
+                                name: '5. TorchBeast 实践',
+                                status: 'future',
+                                description: '落实代码实现能力',
+                                children: [
+                                    {
+                                        name: 'IMPALA 实现',
+                                        description: '分布式强化学习框架',
+                                        difficulty: 'intermediate'
+                                    },
+                                    {
+                                        name: 'Actor-Learner 架构',
+                                        description: '异步训练架构',
+                                        difficulty: 'advanced'
+                                    }
+                                ]
+                            },
+                            {
+                                name: '6. 项目架构设计',
+                                status: 'future',
+                                description: '完整系统架构规划',
+                                children: [
+                                    {
+                                        name: '模型架构',
+                                        description: '神经网络结构设计',
+                                        difficulty: 'advanced'
+                                    },
+                                    {
+                                        name: '训练架构',
+                                        description: '分布式训练流程',
+                                        difficulty: 'advanced'
+                                    },
+                                    {
+                                        name: '模拟环境架构',
+                                        description: '游戏环境搭建',
+                                        difficulty: 'advanced'
+                                    }
+                                ]
+                            },
+                            {
+                                name: '7. 代码深度阅读',
+                                status: 'future',
+                                description: '研究开源实现细节',
+                                children: []
+                            },
+                            {
+                                name: '8. Qt 界面开发',
+                                status: 'future',
+                                description: '可视化工具构建',
+                                children: []
+                            },
+                            {
+                                name: '9. 实战项目',
+                                status: 'future',
+                                description: '完整项目开发与部署',
+                                children: []
+                            }
+                        ]
+                    }
+                };
+            },
+            mounted() {
+                this.initChart();
+                this.progress = Math.round((this.completedCount / this.totalCount) * 100);
+            },
+            methods: {
+                initChart() {
+                    this.chart = echarts.init(document.getElementById('tree-chart'));
+                    this.updateChart();
+                    
+                    this.chart.on('click', (params) => {
+                        if (params.data) {
+                            this.selectedNode = params.data;
+                        }
+                    });
+                },
+                updateChart() {
+                    const option = {
+                        tooltip: {
+                            trigger: 'item',
+                            triggerOn: 'mousemove',
+                            formatter: (params) => {
+                                const data = params.data;
+                                let html = `<strong>${data.name}</strong><br/>`;
+                                if (data.description) {
+                                    html += `${data.description}<br/>`;
+                                }
+                                if (data.children && data.children.length > 0) {
+                                    html += `<br/>包含 ${data.children.length} 个技术点`;
+                                }
+                                return html;
+                            }
+                        },
+                        series: [
+                            {
+                                type: 'tree',
+                                data: [this.treeData],
+                                top: '5%',
+                                left: this.layout === 'radial' ? '15%' : '5%',
+                                bottom: '5%',
+                                right: this.layout === 'radial' ? '15%' : '5%',
+                                symbolSize: 14,
+                                orient: this.layout === 'radial' ? 'LR' : 'LR',
+                                layout: this.layout === 'radial' ? 'radial' : 'orthogonal',
+                                initialTreeDepth: 2,
+                                label: {
+                                    position: 'right',
+                                    verticalAlign: 'middle',
+                                    align: 'left',
+                                    fontSize: 13,
+                                    color: '#333',
+                                    distance: 10,
+                                    formatter: (params) => {
+                                        const name = params.data.name;
+                                        // 如果名字太长，截断并添加省略号
+                                        if (name.length > 20) {
+                                            return name.substring(0, 18) + '...';
+                                        }
+                                        return name;
+                                    },
+                                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                    padding: [4, 8],
+                                    borderRadius: 4
+                                },
+                                leaves: {
+                                    label: {
+                                        position: 'right',
+                                        verticalAlign: 'middle',
+                                        align: 'left',
+                                        distance: 10
+                                    }
+                                },
+                                emphasis: {
+                                    focus: 'descendant'
+                                },
+                                expandAndCollapse: true,
+                                animationDuration: 550,
+                                animationDurationUpdate: 750,
+                                itemStyle: {
+                                    color: (params) => {
+                                        const status = params.data.status;
+                                        if (status === 'completed') return '#52c41a';
+                                        if (status === 'in-progress') return '#ff4d4f';
+                                        return '#d9d9d9';
+                                    },
+                                    borderColor: '#fff',
+                                    borderWidth: 2
+                                },
+                                lineStyle: {
+                                    color: '#ccc',
+                                    width: 2,
+                                    curveness: 0.5
+                                }
+                            }
+                        ]
+                    };
+                    
+                    this.chart.setOption(option);
+                },
+                changeLayout(layout) {
+                    this.layout = layout;
+                    this.updateChart();
+                },
+                expandAll() {
+                    this.expandNode(this.treeData, true);
+                    this.updateChart();
+                },
+                collapseAll() {
+                    this.expandNode(this.treeData, false);
+                    this.updateChart();
+                },
+                expandNode(node, expand) {
+                    if (node.children && node.children.length > 0) {
+                        node.collapsed = !expand;
+                        node.children.forEach(child => this.expandNode(child, expand));
+                    }
+                },
+                resetView() {
+                    this.chart.dispatchAction({
+                        type: 'restore'
+                    });
+                },
+                getStatusText(status) {
+                    const map = {
+                        'completed': '已完成',
+                        'in-progress': '进行中',
+                        'future': '待学习'
+                    };
+                    return map[status] || status;
+                },
+                getDifficultyText(difficulty) {
+                    const map = {
+                        'basic': '基础',
+                        'intermediate': '中级',
+                        'advanced': '高级'
+                    };
+                    return map[difficulty] || difficulty;
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
